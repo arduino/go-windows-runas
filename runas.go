@@ -1,4 +1,4 @@
-package main
+package runas
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-//go:generate go run golang.org/x/sys/windows/mkwinsyscall -output syscall_windows.go main.go
+//go:generate go run golang.org/x/sys/windows/mkwinsyscall -output syscall_windows.go runas.go
 
 const (
 	SEE_MASK_DEFAULT            = 0x00000000
@@ -101,15 +101,8 @@ func shellExecuteError(code windows.Handle) error {
 	}
 }
 
-func main() {
-	if err := installDrivers(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error installing drivers: %s", err)
-		os.Exit(1)
-	}
-}
-
 func installDrivers() error {
-	if !amAdmin() {
+	if !IsAdmin() {
 		// if not elevated, relaunch by shellexecute with runas verb set
 		var runas, execFile, currDir, args *uint16
 		var err error
@@ -166,7 +159,7 @@ func installDrivers() error {
 	return nil
 }
 
-func amAdmin() bool {
+func IsAdmin() bool {
 	elevated := windows.GetCurrentProcessToken().IsElevated()
 	fmt.Printf("admin %v\n", elevated)
 	return elevated
