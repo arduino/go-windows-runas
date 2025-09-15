@@ -1,4 +1,4 @@
-module github.com/arduino/driver-installer-win
+module github.com/arduino/go-windows-runas
 
 go 1.25.1
 
