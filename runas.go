@@ -101,66 +101,54 @@ func shellExecuteError(code windows.Handle) error {
 	}
 }
 
-func installDrivers() error {
-	if !IsAdmin() {
-		// if not elevated, relaunch by shellexecute with runas verb set
-		var runas, execFile, currDir, args *uint16
-		var err error
+// RunElevated starts the given process with elevated priviledges.
+// An UAC prompt is displayed to the user to confirm the action.
+func RunElevated(executable, workingDir string, args []string, awaitProcCompletion bool) (int, error) {
+	var verb, file, directory, parameters *uint16
+	var err error
 
-		if runas, err = windows.UTF16PtrFromString("runas"); err != nil {
-			return err
-		}
-		if exe, err := os.Executable(); err != nil {
-			return err
-		} else if execFile, err = windows.UTF16PtrFromString(exe); err != nil {
-			return err
-		}
-		if cwd, err := os.Getwd(); err != nil {
-			return err
-		} else if currDir, err = windows.UTF16PtrFromString(cwd); err != nil {
-			return err
-		}
-		if args, err = windows.UTF16PtrFromString(strings.Join(os.Args[1:], " ")); err != nil {
-			return err
-		}
+	if verb, err = windows.UTF16PtrFromString("runas"); err != nil {
+		return 0, err
+	}
+	if file, err = windows.UTF16PtrFromString(executable); err != nil {
+		return 0, err
+	}
+	if directory, err = windows.UTF16PtrFromString(workingDir); err != nil {
+		return 0, err
+	}
+	if parameters, err = windows.UTF16PtrFromString(strings.Join(os.Args[1:], " ")); err != nil {
+		return 0, err
+	}
 
-		execInfo := &shellExecuteInfo{
-			size:       uint32(unsafe.Sizeof(shellExecuteInfo{})),
-			verb:       runas,
-			directory:  currDir,
-			file:       execFile,
-			parameters: args,
-			show:       windows.SW_SHOW, //HIDE,
-			mask:       SEE_MASK_NOCLOSEPROCESS,
-		}
-		if !shellExecuteEx(execInfo) {
-			return shellExecuteError(execInfo.instApp)
-		}
+	execInfo := &shellExecuteInfo{
+		size:       uint32(unsafe.Sizeof(shellExecuteInfo{})),
+		verb:       verb,
+		directory:  directory,
+		file:       file,
+		parameters: parameters,
+		show:       windows.SW_SHOW, //HIDE,
+		mask:       SEE_MASK_NOCLOSEPROCESS,
+	}
+	if !shellExecuteEx(execInfo) {
+		return 0, shellExecuteError(execInfo.instApp)
+	}
 
-		// Wait for process completion
+	if awaitProcCompletion {
 		const STILL_ACTIVE = 259 // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getexitcodeprocess#remarks
 		var exitCode uint32 = STILL_ACTIVE
 		for exitCode == STILL_ACTIVE {
 			time.Sleep(250 * time.Millisecond)
 			if err := windows.GetExitCodeProcess(execInfo.process, &exitCode); err != nil {
-				return fmt.Errorf("waiting for process exit: %w", err)
+				return 0, fmt.Errorf("waiting for process exit: %w", err)
 			}
 		}
-		if exitCode != 0 {
-			return fmt.Errorf("process terminated with exitcode %d", exitCode)
-		}
-		return nil
+		return int(exitCode), nil
 	}
-
-	fmt.Println("started")
-	time.Sleep(4 * time.Second)
-	fmt.Println("completed!")
-	time.Sleep(time.Second)
-	return nil
+	return 0, nil
 }
 
-func IsAdmin() bool {
-	elevated := windows.GetCurrentProcessToken().IsElevated()
-	fmt.Printf("admin %v\n", elevated)
-	return elevated
+// IsAdminProcess returns true if the current process already
+// runs as admin.
+func IsAdminProcess() bool {
+	return windows.GetCurrentProcessToken().IsElevated()
 }
