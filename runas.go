@@ -3,7 +3,6 @@ package runas
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 	"unsafe"
@@ -116,7 +115,7 @@ func RunElevated(executable, workingDir string, args []string, awaitProcCompleti
 	if directory, err = windows.UTF16PtrFromString(workingDir); err != nil {
 		return 0, err
 	}
-	if parameters, err = windows.UTF16PtrFromString(strings.Join(os.Args[1:], " ")); err != nil {
+	if parameters, err = windows.UTF16PtrFromString(strings.Join(args, " ")); err != nil {
 		return 0, err
 	}
 
