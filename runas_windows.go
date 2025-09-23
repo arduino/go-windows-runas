@@ -148,7 +148,7 @@ func RunElevated(executable, workingDir string, args []string, awaitProcCompleti
 		directory:  directory,
 		file:       file,
 		parameters: parameters,
-		show:       windows.SW_SHOW, //HIDE,
+		show:       windows.SW_HIDE,
 		mask:       SEE_MASK_NOCLOSEPROCESS,
 	}
 	if !shellExecuteEx(execInfo) {
