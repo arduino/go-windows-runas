@@ -148,6 +148,6 @@ func RunElevated(executable, workingDir string, args []string, awaitProcCompleti
 
 // IsAdminProcess returns true if the current process already
 // runs as admin.
-func IsAdminProcess() bool {
-	return windows.GetCurrentProcessToken().IsElevated()
+func IsAdminProcess() (bool, error) {
+	return windows.GetCurrentProcessToken().IsElevated(), nil
 }
