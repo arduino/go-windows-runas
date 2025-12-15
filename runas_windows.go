@@ -123,9 +123,16 @@ func shellExecuteError(code windows.Handle) error {
 	}
 }
 
+type WindowVisibility int
+
+const (
+	WindowHidden WindowVisibility = iota
+	WindowShown
+)
+
 // RunElevated starts the given process with elevated priviledges.
 // An UAC prompt is displayed to the user to confirm the action.
-func RunElevated(executable, workingDir string, args []string, awaitProcCompletion bool) (int, error) {
+func RunElevated(executable, workingDir string, args []string, awaitProcCompletion bool, visibility WindowVisibility) (int, error) {
 	var verb, file, directory, parameters *uint16
 	var err error
 
@@ -142,13 +149,23 @@ func RunElevated(executable, workingDir string, args []string, awaitProcCompleti
 		return 0, err
 	}
 
+	var showMode int32
+	switch visibility {
+	case WindowHidden:
+		showMode = windows.SW_SHOW
+	case WindowShown:
+		showMode = windows.SW_HIDE
+	default:
+		return 0, fmt.Errorf("invalid visibility mode: %d", visibility)
+	}
+
 	execInfo := &shellExecuteInfo{
 		size:       uint32(unsafe.Sizeof(shellExecuteInfo{})),
 		verb:       verb,
 		directory:  directory,
 		file:       file,
 		parameters: parameters,
-		show:       windows.SW_HIDE,
+		show:       showMode,
 		mask:       SEE_MASK_NOCLOSEPROCESS,
 	}
 	if !shellExecuteEx(execInfo) {
