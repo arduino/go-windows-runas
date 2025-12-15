@@ -125,7 +125,7 @@ func shellExecuteError(code windows.Handle) error {
 
 // RunElevated starts the given process with elevated priviledges.
 // An UAC prompt is displayed to the user to confirm the action.
-func RunElevated(executable, workingDir string, args []string, awaitProcCompletion bool, showWindow bool) (int, error) {
+func RunElevated(executable, workingDir string, args []string, awaitProcCompletion bool, hideWindow bool) (int, error) {
 	var verb, file, directory, parameters *uint16
 	var err error
 
@@ -142,9 +142,9 @@ func RunElevated(executable, workingDir string, args []string, awaitProcCompleti
 		return 0, err
 	}
 
-	var showMode int32 = windows.SW_HIDE
-	if showWindow {
-		showMode = windows.SW_SHOW
+	var showMode int32 = windows.SW_SHOW
+	if hideWindow {
+		showMode = windows.SW_HIDE
 	}
 
 	execInfo := &shellExecuteInfo{
