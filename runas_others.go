@@ -27,7 +27,7 @@ package runas
 
 import "errors"
 
-func RunElevated(executable, workingDir string, args []string, awaitProcCompletion bool) (int, error) {
+func RunElevated(executable, workingDir string, args []string, awaitProcCompletion bool, hideWindow bool) (int, error) {
 	return 0, errors.New("RunElevated is only supported on Windows")
 }
 
